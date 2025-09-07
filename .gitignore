@@ -1,0 +1,5 @@
+Automation/.venv/
+Automation/DiscordBot/__pycache__
+Automation/DiscordBot/.env
+
+Software/V2/pgRemote/__pycache__
