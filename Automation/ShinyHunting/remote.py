@@ -2,9 +2,10 @@
 96, 160
 """
 import serial, struct, time
+from time import sleep
 
 
-SERIAL_PORT = SERIAL_PORT = '/dev/ttyUSB0'
+SERIAL_PORT = 'COM3'
 DEFAULT_PAUSE = 0.04
 
 
@@ -13,7 +14,7 @@ class Remote:
         self.ser = serial.Serial(SERIAL_PORT, 9600)
         return
 
-    def make_packet(self, inputs, l_stick=False, r_stick=False):
+    def make_packet(self, inputs=[], l_stick=False, r_stick=False):
         # Writes serial command to serial
 
         # Who up moving their sticks
@@ -76,12 +77,28 @@ class Remote:
 
         return x, y
 
-    def press(self, buttons, movement=None):
-        
-        if movement:
-            movement = self.get_movement(movement)
-
+    def press(self, buttons=[], movement=[]):
+        movement = self.get_movement(movement)
         packet = self.make_packet(buttons, l_stick=movement)
-
         self.ser.write(packet)
+        return
+
+    def move(self, *args):
+        """
+        Accepts move(x, y) or move((x, y))
+        """
+        if len(args) == 1 and isinstance(args[0], (tuple, list)) and len(args[0]) == 2:
+            x, y = args[0]
+        elif len(args) == 2:
+            x, y = args
+        else:
+            raise ValueError("move() requires either (x, y) or ((x, y))")
+        packet = self.make_packet(l_stick=(x, y))
+        self.ser.write(packet)
+        return
+
+    def tap(self, movement=[], buttons=[], delay=0.1):
+        self.press(buttons=buttons, movement=movement)
+        sleep(delay)
+        self.reset()
         return
