@@ -1,6 +1,4 @@
-Automation/.venv/
-Automation/DiscordBot/__pycache__
-Automation/DiscordBot/.env
-
-Software/V2/pgRemote/__pycache__
-Software/V2/pgRemote/.pg_venv
+**/__pycache__
+**/.venv
+**/.env
+**/.pg_venv

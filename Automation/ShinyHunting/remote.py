@@ -34,17 +34,24 @@ class Remote:
         packet += struct.pack("B", len(inputs))
         for c in inputs:
             packet += struct.pack("c", c.encode())
-        print(packet)
+        
         return packet
 
+    def close_ser(self):
+        # Closes connection
+        self.ser.close()
+        return
+    
     def reset(self):
         # Resets all held inputs
         self.ser.write(self.make_packet('0'))
         return
 
-    def close_ser(self):
-        # Closes connection
-        self.ser.close()
+    def wakeup(self):
+        # Wakeup the switch
+        self.press('H')
+        sleep(4)
+        self.reset()
         return
 
     def get_movement(self, movements):
