@@ -3,9 +3,15 @@
 """
 import serial, struct, time
 from time import sleep
+import platform
 
 
-SERIAL_PORT = 'COM3'
+if platform.system() == "Windows":
+    SERIAL_PORT = 'COM3'
+elif platform.system() == "Linux":
+    SERIAL_PORT = '/dev/ttyUSB0'
+else:
+    raise SystemError("Unknown OS")
 DEFAULT_PAUSE = 0.04
 
 

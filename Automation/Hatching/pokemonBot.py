@@ -4,14 +4,29 @@ Sword and Shield
 from time import sleep
 from alive_progress import alive_bar
 import remote, shinyChecker
+import requests
 
+# ==== Update discord bot ====
+BASE_URL = "http://localhost:5000"
+
+def send_discord_update(path, ping=False):
+    try:
+        payload = {"id": "screenshot", "path": path, 'ping': ping}
+        resp = requests.post(f"{BASE_URL}/update", json=payload)
+        data = resp.json()
+        print(f"> Discord update response: {data}")
+    except Exception as e:
+        print(f"Error sending update: {e}")
+    return
+
+
+# ==== Pokemon Bot ====
 # Some directions
 LEFT = (0, 128)
 RIGHT = (255, 128)
 UP = (128, 0)
 DOWN = (128, 255)
 NEUTRAL = (128, 128)
-
 
 class Trainer:
     def __init__(self):
@@ -159,6 +174,45 @@ class Trainer:
                 bar()
         return
 
+    def shiny_check_box(self):
+        for r in range(5):
+            for c in range(6):
+                shiny, present = shinyChecker.check_shiny()
+                if shiny:
+                    stats_path = shinyChecker.save_screenshot_file()
+                    t.tap('P')
+                    picture_path = shinyChecker.save_screenshot()
+                    send_discord_update(picture_path, True)
+                    send_discord_update(stats_path)
+                    input()
+                    t.tap('P')
+                    sleep(0.4)
+                    t.tap('P')
+                    sleep(0.4)
+                if c == 5 and r < 4:
+                    self.tap_down()
+                else:
+                    if c != 5 or r < 4:
+                        self.tap_right() if r%2==0 else self.tap_left()
+        for _ in range(4):
+            self.tap_up()
+            sleep(0.2)
+        for _ in range(5):
+            self.tap_left()
+            sleep(0.2)
+        return
+
+    def shiny_check_boxes(self):
+        print('> Shiny Checking Boxes')
+        sleep(0.6)
+        shiny_pos = []
+        with alive_bar(32) as bar:
+            for box in range(32):
+                bar()
+        return shiny_pos
+
+        return
+
     # Hatching
     def reposition(self):
         # Resets location at bridge daycare
@@ -252,7 +306,7 @@ class Trainer:
         self.bike_circle(20)
         return
 
-    def shiny_check_box(self):
+    def shiny_release_box(self):
         print('> Releasing box and shiny checking')
         sleep(0.6)
         shiny_pos = []
@@ -274,38 +328,64 @@ class Trainer:
                     bar()
         return shiny_pos
 
-    def batch_eggs(self, num_eggs=30):
+    def batch_eggs(self, cycle, num_eggs=30):
         for egg in range(num_eggs):
             print()
-            print(f"({egg+1: >{len(str(num_eggs))}}/{num_eggs})")
+            print(f"{cycle}-({egg+1: >{len(str(num_eggs))}}/{num_eggs})")
             self.hatch_egg()
 
             # Go to box
-            # shinies = self.shiny_check_box()
+            # shinies = self.shiny_release_box()
         return
     
+    def handle_shinies(self, shiny_pos):
+        
+        for s in shiny_pos:
+            r, c = s
+            print(r, s)
+            for _ in range(4-r):
+                self.tap_up()
+                sleep(0.2)
+            for _ in range(5-c):
+                self.tap_left()
+                sleep(0.2)
+
+        return
+
+    def shiny_cycle(self, cycle):
+        self.batch_eggs(cycle)
+
+        sleep(1)
+        self.tap('X')
+        sleep(1)
+        self.tap_up()
+        sleep(0.5)
+        self.tap('A')
+        sleep(3)
+        self.tap('R')
+        sleep(2)
+
+        self.handle_shinies(self.shiny_release_box())
+
+        sleep(0.5)
+        self.tap('B')
+        sleep(2)
+        self.tap('B')
+        sleep(1)
+        self.tap_down()
+        sleep(0.5)
+        self.tap('B')
+        sleep(0.5)
+        return
+
 
 if __name__ == "__main__":
     t = Trainer()
 
     # t.tap('H')
-    # sleep(0.5)
-    # t.tap('H')
-    # sleep(0.5)
-    # t.tap('H')
-    # sleep(0.5)
-
-    t.reload_game()
-
-    t.tap('X')
-    sleep(1)
-    t.tap_up()
-    sleep(1)
-    t.tap('A')
-    sleep(3)
-    t.tap('R')
-    sleep(2.5)
-    print(t.shiny_check_box())
+    
+    for i in range(5):
+        t.shiny_cycle(i)
 
     # t.batch_eggs()
 

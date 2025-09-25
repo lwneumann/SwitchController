@@ -2,3 +2,4 @@
 **/.venv
 **/.env
 **/.pg_venv
+**/Pictures

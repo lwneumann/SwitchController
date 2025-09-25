@@ -12,10 +12,12 @@ import screenshot
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))
+USER_ID = int(os.getenv("USER_ID")) 
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
+user = None
 
 app = Flask(__name__)
 
@@ -38,6 +40,21 @@ def update():
         try:
             future = asyncio.run_coroutine_threadsafe(channel.send(msg), bot.loop)
             future.result(timeout=10)
+            return jsonify({"status": "ok", "result": "Message sent"})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    # Post screenshot
+    if data.get("id") == "screenshot":
+        ping = data['ping']
+        path = data['path']
+        try:
+            if ping:
+                future = asyncio.run_coroutine_threadsafe(channel.send(user.mention, file=discord.File(path)), bot.loop)
+            else:
+                future = asyncio.run_coroutine_threadsafe(channel.send(file=discord.File(path)), bot.loop)
+            future.result(timeout=10)
+
             return jsonify({"status": "ok", "result": "Message sent"})
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
@@ -86,8 +103,11 @@ def get_result():
 # -----------------------------
 @bot.event
 async def on_ready():
+    global user
+    user = await bot.fetch_user(USER_ID)
+
     print(f"> Logged in as {bot.user}")
-    return
+    return user
 
 # Handle emoji reactions for user input
 @bot.event

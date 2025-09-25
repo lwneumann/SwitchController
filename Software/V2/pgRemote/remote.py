@@ -2,9 +2,14 @@
 96, 160
 """
 import serial, struct, time
+import platform
 
-
-SERIAL_PORT = SERIAL_PORT = '/dev/ttyUSB0'
+if platform.system() == "Windows":
+    SERIAL_PORT = 'COM3'
+elif platform.system() == "Linux":
+    SERIAL_PORT = '/dev/ttyUSB0'
+else:
+    raise SystemError("Unknown OS")
 DEFAULT_PAUSE = 0.04
 
 LEFT = (0, 128)

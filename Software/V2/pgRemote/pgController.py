@@ -43,6 +43,7 @@ class Window:
             pygame.K_d: 'd',
             pygame.K_SPACE: 'X',
             pygame.K_LSHIFT: 'V',
+            pygame.K_t: 'R',
             pygame.K_LCTRL: 'L',
             pygame.K_KP0: '0',
             pygame.K_KP4: 'A',
@@ -79,6 +80,7 @@ class Window:
                     running = False
                 # Key downs
                 elif event.type == pygame.KEYDOWN:
+                    event.key == pygame.K_ESCAPE
                     if event.key == pygame.K_ESCAPE:
                         running = False
                     # Prioritize Macros
