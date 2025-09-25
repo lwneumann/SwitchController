@@ -1,10 +1,27 @@
 import remote
 import pygame
+import cv2
+import datetime
 
 
 SCREEN_TITLE = ':)'
 SCREEN_SIZE = (250, 70)
 FPS = 60
+
+
+
+def screenshot():
+    cam = cv2.VideoCapture(0)
+    retval, frame = cam.read()
+    if retval:
+        path =  f"../Pictures/"
+        name = f'{str(datetime.datetime.now().strftime("%y%m%d%H%S"))}.png'
+        cv2.imwrite(path+name, frame)
+        print("> Saved", name)
+    else:
+        print('> Failed to screenshot :(')
+    cam.release()
+    return
 
 
 class Window:
@@ -28,6 +45,7 @@ class Window:
         self.remote = remote.Remote()
         # Lists of active buttons
         self.held_keys = set()
+        self.last_input = set()
         return
 
     def run(self):
@@ -40,7 +58,7 @@ class Window:
             pygame.K_a: 'a',
             pygame.K_s: 's',
             pygame.K_d: 'd',
-            pygame.K_SPACE: 'X',
+            pygame.K_SPACE: 'Y',
             pygame.K_LSHIFT: 'V',
             pygame.K_t: 'R',
             pygame.K_LCTRL: 'L',
@@ -49,7 +67,7 @@ class Window:
             pygame.K_KP6: 'B',
             pygame.K_h: 'H',
             pygame.K_p: 'P',
-            pygame.K_y: 'Y',
+            pygame.K_x: 'X',
             pygame.K_c: 'C'
         }
 
@@ -64,12 +82,16 @@ class Window:
                         break
                     elif event.key in key_map:
                         self.held_keys.add(key_map[event.key])
+                    elif event.key == pygame.K_F5:
+                        screenshot()
                 elif event.type == pygame.KEYUP:
                     if event.key in key_map:
                         self.held_keys.discard(key_map[event.key])
 
             # Update
-            self.remote.press(self.held_keys)
+            if self.held_keys != self.last_input:
+                self.remote.press(self.held_keys)
+                self.last_input = self.held_keys.copy()
 
             # Maintain FPS
             clock.tick(FPS)

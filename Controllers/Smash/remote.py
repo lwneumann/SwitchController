@@ -84,7 +84,7 @@ class Remote:
         packet += struct.pack("B", len(inputs))
         for c in inputs:
             packet += struct.pack("c", c.encode())
-        print(packet)
+
         return packet
 
     def reset(self):
