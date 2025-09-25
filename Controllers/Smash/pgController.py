@@ -1,5 +1,5 @@
 import remote
-import pygame, sys
+import pygame
 
 
 SCREEN_TITLE = ':)'
@@ -8,8 +8,7 @@ FPS = 60
 
 
 class Window:
-    def __init__(self, verbose):
-        self.verbose = verbose
+    def __init__(self):
         self.setup()
         self.run()
         return
@@ -21,7 +20,7 @@ class Window:
         # --- Make things
         self.screen = pygame.display.set_mode((SCREEN_SIZE[0], SCREEN_SIZE[1]))
         pygame.display.set_caption(SCREEN_TITLE)
-        icon = pygame.image.load('favicon.ico')
+        icon = pygame.image.load('../favicon.ico')
         pygame.display.set_icon(icon)
 
         # --- Get internals
@@ -29,7 +28,6 @@ class Window:
         self.remote = remote.Remote()
         # Lists of active buttons
         self.held_keys = set()
-        self.last_input = set()
         return
 
     def run(self):
@@ -42,14 +40,17 @@ class Window:
             pygame.K_a: 'a',
             pygame.K_s: 's',
             pygame.K_d: 'd',
-            pygame.K_SPACE: ' ',
-            pygame.K_LEFT: 'Left',
-            pygame.K_RIGHT: 'Right',
-            pygame.K_LSHIFT: "LShift",
-            pygame.K_LCTRL: "LControl",
-            # Special
-            pygame.K_UP: 'Up',
-            pygame.K_DOWN: 'Down'
+            pygame.K_SPACE: 'X',
+            pygame.K_LSHIFT: 'V',
+            pygame.K_t: 'R',
+            pygame.K_LCTRL: 'L',
+            pygame.K_KP0: '0',
+            pygame.K_KP4: 'A',
+            pygame.K_KP6: 'B',
+            pygame.K_h: 'H',
+            pygame.K_p: 'P',
+            pygame.K_y: 'Y',
+            pygame.K_c: 'C'
         }
 
         while running:
@@ -68,11 +69,8 @@ class Window:
                         self.held_keys.discard(key_map[event.key])
 
             # Update
-            if self.held_keys != self.last_input:
-                if self.verbose:
-                    print('p ', self.held_keys)
-                self.remote.press(self.held_keys)
-                self.last_input = self.held_keys.copy()
+            self.remote.press(self.held_keys)
+
             # Maintain FPS
             clock.tick(FPS)
 
@@ -83,4 +81,4 @@ class Window:
 
 
 if __name__ == "__main__":
-    Window("-p" in sys.argv)
+    Window()

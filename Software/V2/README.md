@@ -72,17 +72,21 @@ All possible inputs are listed below. Some choices use single letters for simpli
 
 ## Firmware Input Packets
 
-**Structure:**  
+**Structure:**
+
+From [`struct`](https://docs.python.org/3/library/struct.html); packing goes as follows;
+
 `?[BB]?[BB]B[c...]`
 
+
 - `?`: Move Left
-  - Left x
-  - Left y
+  - `B` Left x
+  - `B` Left y
 - `?`: Move Right
-  - Right x
-  - Right y
+  - `B` Right x
+  - `B` Right y
 - `B`: Number of Commands
-  -
+  - `c` commands (from above)
 
 
 <!--
