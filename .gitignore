@@ -3,3 +3,4 @@
 **/.env
 **/.pg_venv
 **/Pictures
+**/out
