@@ -1,9 +1,9 @@
 import remote
-import pygame
+import pygame, sys
 
 
 SCREEN_TITLE = ':)'
-SCREEN_SIZE = (250, 70)
+SCREEN_SIZE = (500, 500)
 FPS = 60
 
 
@@ -20,14 +20,15 @@ class Window:
         # --- Make things
         self.screen = pygame.display.set_mode((SCREEN_SIZE[0], SCREEN_SIZE[1]))
         pygame.display.set_caption(SCREEN_TITLE)
-        icon = pygame.image.load('../favicon.ico')
-        pygame.display.set_icon(icon)
+        self.screen.fill((0, 0, 0))
+        pygame.display.update()
 
         # --- Get internals
         # Remote Connection
         self.remote = remote.Remote()
         # Lists of active buttons
         self.held_keys = set()
+        self.last_input = set()
         return
 
     def run(self):
@@ -52,16 +53,40 @@ class Window:
             pygame.K_y: 'Y',
             pygame.K_c: 'C'
         }
+        macro_map = {
+            pygame.K_COMMA: ',',
+            pygame.K_PERIOD: '.',
+            pygame.K_SLASH: '/',
+            pygame.K_KP1: 'Left',
+            pygame.K_KP3: 'Right',
+            pygame.K_KP5: 'Up',
+            pygame.K_KP2: 'Down',
+            pygame.K_KP7: 'K7',
+            pygame.K_KP9: 'K9',
+            pygame.K_KP8: 'K8',
+            pygame.K_l: 'mL',
+            pygame.K_BACKSPACE: 'Backspace',
+            pygame.K_QUOTE: "'",
+            pygame.K_SEMICOLON: ';',
+            pygame.K_TAB: 'Tab',
+            pygame.K_RSHIFT: 'RShift',
+            pygame.K_KP_ENTER: 'KPE'
+        }
 
         while running:
             # --- Events and other keystrokes
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
+                # Key downs
                 elif event.type == pygame.KEYDOWN:
+                    event.key == pygame.K_ESCAPE
                     if event.key == pygame.K_ESCAPE:
                         running = False
-                        break
+                    # Prioritize Macros
+                    elif event.key in macro_map:
+                        self.remote.macro(macro_map[event.key])
+                    # Normal Presses
                     elif event.key in key_map:
                         self.held_keys.add(key_map[event.key])
                 elif event.type == pygame.KEYUP:
@@ -69,13 +94,14 @@ class Window:
                         self.held_keys.discard(key_map[event.key])
 
             # Update
-            self.remote.press(self.held_keys)
-
+            if self.held_keys != self.last_input:
+                self.remote.press(self.held_keys)
+                self.last_input = self.held_keys.copy()
             # Maintain FPS
             clock.tick(FPS)
 
         # Close
-        pygame.font.quit()
+        self.remote.close_ser()
         pygame.quit()
         return
 

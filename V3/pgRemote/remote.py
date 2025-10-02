@@ -57,6 +57,7 @@ MACRO_MAP = {
     'Left': left_electric,
     'Right': right_electric,
     'Backspace': RESET_TRAINING_MODE
+    # 'K8': [[['B'], UP]],
 }
 
 
@@ -68,6 +69,8 @@ class Remote:
 
     def make_packet(self, inputs, l_stick=False, r_stick=False):
         # Writes serial command to serial
+
+        # Who up moving their sticks
         moving_l = l_stick is not False
         moving_r = r_stick is not False
 
@@ -86,11 +89,6 @@ class Remote:
             packet += struct.pack("c", c.encode())
         print(packet)
         return packet
-
-    def reset(self):
-        # Resets all held inputs
-        self.ser.write(self.make_packet('0'))
-        return
 
     def close_ser(self):
         # Closes connection
@@ -139,4 +137,48 @@ class Remote:
         packet = self.make_packet(buttons, l_stick=movement)
 
         self.ser.write(packet)
+        return
+
+    # --- Macros
+
+    def dash_dance(self, n=5):
+        for i in range(n):
+            self.hit([], LEFT)
+            time.sleep(0.05)
+            self.hit([], RIGHT)
+            time.sleep(0.05)
+        return
+
+    def macro(self, m):
+        if m in MACRO_MAP:
+            for i in MACRO_MAP[m]:
+                p = self.make_packet(i[0], l_stick=i[1])
+                self.ser.write(p)
+                time.sleep(DEFAULT_PAUSE)
+        elif m in ("K7", 'K9'):
+            self.kazuya_zero_to_death(m == 'K7')
+        elif m in ('Up', 'Down'):
+            if self.facing_right:
+                k_dir = (160, 160) if m == 'Up' else (96, 160)
+            else:
+                k_dir = (96, 160) if m == 'Up' else (160, 160)
+            self.hit(['A'], k_dir)
+            time.sleep(0.05)
+        elif m == 'Tab':
+            self.dash_dance()
+        elif m == 'KPE':
+            if self.facing_right:
+                for i in right_grab:
+                    p = self.make_packet(i[0], l_stick=i[1])
+                    self.ser.write(p)
+                    time.sleep(DEFAULT_PAUSE)
+            else:
+                for i in left_grab:
+                    p = self.make_packet(i[0], l_stick=i[1])
+                    self.ser.write(p)
+                    time.sleep(DEFAULT_PAUSE)
+        return
+
+    def hit(self, inp, mov=False):
+        self.ser.write(self.make_packet(inp, mov))
         return

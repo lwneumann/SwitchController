@@ -1,5 +1,5 @@
 import remote
-import pygame
+import pygame, sys
 
 
 SCREEN_TITLE = ':)'
@@ -8,7 +8,8 @@ FPS = 60
 
 
 class Window:
-    def __init__(self):
+    def __init__(self, verbose):
+        self.verbose = verbose
         self.setup()
         self.run()
         return
@@ -28,6 +29,7 @@ class Window:
         self.remote = remote.Remote()
         # Lists of active buttons
         self.held_keys = set()
+        self.last_input = set()
         return
 
     def run(self):
@@ -40,17 +42,14 @@ class Window:
             pygame.K_a: 'a',
             pygame.K_s: 's',
             pygame.K_d: 'd',
-            pygame.K_SPACE: 'X',
-            pygame.K_LSHIFT: 'V',
-            pygame.K_t: 'R',
-            pygame.K_LCTRL: 'L',
-            pygame.K_KP0: '0',
-            pygame.K_KP4: 'A',
-            pygame.K_KP6: 'B',
-            pygame.K_h: 'H',
-            pygame.K_p: 'P',
-            pygame.K_y: 'Y',
-            pygame.K_c: 'C'
+            pygame.K_SPACE: ' ',
+            pygame.K_LEFT: 'Left',
+            pygame.K_RIGHT: 'Right',
+            pygame.K_LSHIFT: "LShift",
+            pygame.K_LCTRL: "LControl",
+            # Special
+            pygame.K_UP: 'Up',
+            pygame.K_DOWN: 'Down'
         }
 
         while running:
@@ -69,8 +68,11 @@ class Window:
                         self.held_keys.discard(key_map[event.key])
 
             # Update
-            self.remote.press(self.held_keys)
-
+            if self.held_keys != self.last_input:
+                if self.verbose:
+                    print('p ', self.held_keys)
+                self.remote.press(self.held_keys)
+                self.last_input = self.held_keys.copy()
             # Maintain FPS
             clock.tick(FPS)
 
@@ -81,4 +83,4 @@ class Window:
 
 
 if __name__ == "__main__":
-    Window()
+    Window("-p" in sys.argv)
