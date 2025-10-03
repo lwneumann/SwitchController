@@ -1,7 +1,8 @@
 """
 96, 160
 """
-import serial, struct, time
+import serial, struct
+from time import sleep
 import platform
 
 if platform.system() == "Windows":
@@ -90,6 +91,11 @@ class Remote:
         print(packet)
         return packet
 
+    def reset(self):
+        # Resets all held inputs
+        self.ser.write(self.make_packet('0'))
+        return
+
     def close_ser(self):
         # Closes connection
         self.ser.close()
@@ -144,41 +150,91 @@ class Remote:
     def dash_dance(self, n=5):
         for i in range(n):
             self.hit([], LEFT)
-            time.sleep(0.05)
+            sleep(0.05)
             self.hit([], RIGHT)
-            time.sleep(0.05)
+            sleep(0.05)
+        self.reset()
         return
 
-    def macro(self, m):
+    def macro(self, m, mode):
         if m in MACRO_MAP:
             for i in MACRO_MAP[m]:
                 p = self.make_packet(i[0], l_stick=i[1])
                 self.ser.write(p)
-                time.sleep(DEFAULT_PAUSE)
-        elif m in ("K7", 'K9'):
-            self.kazuya_zero_to_death(m == 'K7')
-        elif m in ('Up', 'Down'):
-            if self.facing_right:
-                k_dir = (160, 160) if m == 'Up' else (96, 160)
-            else:
-                k_dir = (96, 160) if m == 'Up' else (160, 160)
-            self.hit(['A'], k_dir)
-            time.sleep(0.05)
-        elif m == 'Tab':
+                sleep(DEFAULT_PAUSE)
+            self.reset()
+        if m == 'Tab':
             self.dash_dance()
-        elif m == 'KPE':
-            if self.facing_right:
-                for i in right_grab:
-                    p = self.make_packet(i[0], l_stick=i[1])
-                    self.ser.write(p)
-                    time.sleep(DEFAULT_PAUSE)
-            else:
-                for i in left_grab:
-                    p = self.make_packet(i[0], l_stick=i[1])
-                    self.ser.write(p)
-                    time.sleep(DEFAULT_PAUSE)
+        # Kazuya
+        elif mode == 'Kazuya':
+            if m in ("K7", 'K9'):
+                self.kazuya_zero_to_death(m == 'K7')
+            elif m in ('Up', 'Down'):
+                if self.facing_right:
+                    k_dir = (160, 160) if m == 'Up' else (96, 160)
+                else:
+                    k_dir = (96, 160) if m == 'Up' else (160, 160)
+                self.hit(['A'], k_dir)
+                sleep(0.05)
+                self.reset()
+            elif m == 'KPE':
+                if self.facing_right:
+                    for i in right_grab:
+                        p = self.make_packet(i[0], l_stick=i[1])
+                        self.ser.write(p)
+                        sleep(DEFAULT_PAUSE)
+                else:
+                    for i in left_grab:
+                        p = self.make_packet(i[0], l_stick=i[1])
+                        self.ser.write(p)
+                        sleep(DEFAULT_PAUSE)
+                self.reset()
+        # Steve
+        elif mode == "Steve":
+            if m == 'F':
+                self.steve_f()
         return
 
     def hit(self, inp, mov=False):
         self.ser.write(self.make_packet(inp, mov))
+        return
+
+    def tap(self, *args):
+        if len(args) > 3:
+            raise ValueError("tap() expects no more than 3 arguments: inputs, [movement], duration")
+
+        inp = args[0]
+        mov = args[1] if len(args) == 3 else False
+        duration = args[-1] if len(args) > 1 and isinstance(args[-1], (int, float)) else 0.05
+
+        self.hit(inp, mov)
+        sleep(duration)
+        self.reset()
+        return
+
+    def kazuya_zero_to_death(self, facing_right):
+        diff = -1 if facing_right else 1
+        soft_dir = (128 + 50*diff, 128)
+        hard_dir = (min(128 + 128*diff, 255), 128)
+
+        # dash
+        self.hit([], hard_dir)
+        sleep(0.06)
+        self.hit('X')
+        sleep(0.03)
+        self.hit('A')
+        sleep(0.06)
+        self.reset()
+        return
+    
+    def steve_f(self):
+        self.tap('X', 0.4)
+        self.tap('X', 0.4)
+        self.tap('B')
+        self.tap('', LEFT, 0.1)
+        return
+    
+    def steve_nod(self, n=5):
+        for i in range(n):
+            pass
         return
