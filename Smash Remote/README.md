@@ -7,8 +7,8 @@ Use the following controls in game
 
 | Key            | Button        |
 |----------------|---------------|
-| 4              | A             |
-| 6              | B             |
+| [4]            | A             |
+| [6]            | B             |
 | x              | X             |
 | space          | Y             |
 | left control   | Left bumper   |

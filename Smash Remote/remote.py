@@ -5,6 +5,7 @@ import serial, struct
 from time import sleep
 import platform
 
+# This could change based on physical port remote is plugged into
 if platform.system() == "Windows":
     SERIAL_PORT = 'COM3'
 elif platform.system() == "Linux":
@@ -13,41 +14,78 @@ else:
     raise SystemError("Unknown OS")
 DEFAULT_PAUSE = 0.04
 
+# Hard directions
 LEFT = (0, 128)
 RIGHT = (255, 128)
 UP = (128, 0)
 DOWN = (128, 255)
 NEUTRAL = (128, 128)
-
+DLEFT = (0, 255)
+DRIGHT = (255, 255)
+# Soft Directions
 sLEFT = (96, 128)
 sRIGHT = (160, 128)
 sUP = (128, 96)
 sDOWN = (128, 160)
-
+sDLEFT = (96, 160)
 sDRIGHT = (160, 160)
-sDLEFT = (90, 160)
 
-UP_B = [UP, "B"]
 
+# Kazuya
 right_electric = [
     [[], sRIGHT],
     [[], sDOWN],
-    [['A'], (160, 160)]
+    [['A'], sDRIGHT]
 ]
 left_electric = [
     [[], sLEFT],
     [[], sDOWN],
-    [['A'], (96, 160)]
+    [['A'], sDLEFT]
 ]
 right_grab = [
-    [[], (160, 160)],
+    [[], sDRIGHT],
     [[], sDOWN],
-    [['L'], (160, 160)]
+    [['L'], sDRIGHT]
 ]
 left_grab = [
-    [[], (96, 160)],
+    [[], sDLEFT],
     [[], sDOWN],
-    [['L'], (96, 160)]
+    [['L'], sDLEFT]
+]
+# FGC
+right_quarter = [
+    [[], DOWN],
+    [[], DRIGHT],
+    [[], RIGHT]
+]
+left_quarter = [
+    [[], DOWN],
+    [[], DLEFT],
+    [[], LEFT]
+]
+right_semi = [
+    [[], sLEFT],
+    [[], sDLEFT],
+    [[], sDOWN],
+    [[], sDRIGHT],
+    [[], sRIGHT]
+]
+left_semi = [
+    [[], sRIGHT],
+    [[], sDRIGHT],
+    [[], sDOWN],
+    [[], sDLEFT],
+    [[], sLEFT]
+]
+right_z = [
+    [[], sRIGHT],
+    [[], sDOWN],
+    [[], sDRIGHT]
+]
+left_z = [
+    [[], sLEFT],
+    [[], sDOWN],
+    [[], sDLEFT]
 ]
 
 MOVEMENT_KEYS = {'w', 'a', 's', 'd', 'q', 'e'}
@@ -55,10 +93,15 @@ MOVEMENT_KEYS = {'w', 'a', 's', 'd', 'q', 'e'}
 RESET_TRAINING_MODE = [[['L', 'R', 'A'], False]]
 
 MACRO_MAP = {
-    'Left': left_electric,
-    'Right': right_electric,
-    'Backspace': RESET_TRAINING_MODE
-    # 'K8': [[['B'], UP]],
+    'Basic': {'Backspace': RESET_TRAINING_MODE},
+    'Kazuya': {
+        'KP1': left_electric,
+        'KP3': right_electric,
+        'Backspace': RESET_TRAINING_MODE
+    },
+    'FGC': {
+        'Backspace': RESET_TRAINING_MODE
+    }
 }
 
 
@@ -113,7 +156,7 @@ class Remote:
 
     def get_movement(self, movements):
         # Moves left joystick
-        x_move = {'a': 0, 'd': 255, 'q': 96, 'e': 160}
+        x_move = {'a': 0, 'd': 255, 'q': 90, 'e': 166}
         y_move = {'w': 0, 's': 255, }
 
         x = 128
@@ -156,24 +199,28 @@ class Remote:
         self.reset()
         return
 
-    def macro(self, m, mode):
-        if m in MACRO_MAP:
-            for i in MACRO_MAP[m]:
-                p = self.make_packet(i[0], l_stick=i[1])
-                self.ser.write(p)
-                sleep(DEFAULT_PAUSE)
+    def run_macro(self, macro):
+        for i in macro:
+            p = self.make_packet(i[0], l_stick=i[1])
+            self.ser.write(p)
+            sleep(DEFAULT_PAUSE)
             self.reset()
+        return
+
+    def macro(self, m, mode):
+        if m in MACRO_MAP.get(mode, 'Basic'):
+            self.run_macro(MACRO_MAP.get(mode, 'Basic')[m])
         if m == 'Tab':
             self.dash_dance()
         # Kazuya
         elif mode == 'Kazuya':
             if m in ("K7", 'K9'):
                 self.kazuya_zero_to_death(m == 'K7')
-            elif m in ('Up', 'Down'):
+            elif m in ('KP5', 'KP2'):
                 if self.facing_right:
-                    k_dir = (160, 160) if m == 'Up' else (96, 160)
+                    k_dir = (160, 160) if m == 'KP5' else (96, 160)
                 else:
-                    k_dir = (96, 160) if m == 'Up' else (160, 160)
+                    k_dir = (96, 160) if m == 'KP5' else (160, 160)
                 self.hit(['A'], k_dir)
                 sleep(0.05)
                 self.reset()
@@ -193,6 +240,14 @@ class Remote:
         elif mode == "Steve":
             if m == 'F':
                 self.steve_f()
+        # FGC
+        elif mode == "FGC":
+            if m == "KP3":
+                self.run_macro(right_quarter)
+            elif m == "KP1":
+                self.run_macro(left_quarter)
+            elif m == "KP2":
+                self.run_macro(right_semi if self.facing_right else left_semi)
         return
 
     def hit(self, inp, mov=False):
